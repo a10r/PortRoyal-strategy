@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>PortRoyalStrategy</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Utils.fs" />
+    <Compile Include="PortRoyalModel.fs" />
+    <Compile Include="SimulationEngine.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+</Project>
