@@ -15,8 +15,8 @@ A two player game with very fast but stupid agents (which just pick a random act
 ### TODO
 
 - [x] Working, tested model of the game
-- [] Refactor some of the ugly parts of the model
+- [ ] Refactor some of the ugly parts of the model
 - [x] Simple simulation engine
-- [] Implement more complex heuristics
-- [] Implement more complex move planning
-- [] Implement some sort of genetic algorithm for finding promising strategies (e.g., card hiring preferences)
+- [ ] Implement more complex heuristics
+- [ ] Implement more complex move planning
+- [ ] Implement some sort of genetic algorithm for finding promising strategies (e.g., card hiring preferences)
