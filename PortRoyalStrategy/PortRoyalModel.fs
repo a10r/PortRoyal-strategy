@@ -1,7 +1,5 @@
 module PortRoyalStrategy.PortRoyalModel
 
-open System
-
 type Color = 
     | Black 
     | Blue 
@@ -15,6 +13,7 @@ type CitizenKind =
     | Priest
     | JackOfAllTrades // Provides any citizen kind towards an expedition
 
+/// Condition for coin bonus that is given by a tax increase.
 type BonusCondition =
     | MaxStrength
     | MinVictoryPoints
@@ -35,17 +34,21 @@ type Card =
     | Expedition of CompletionRequirements: CitizenKind list * BonusCoins: int * VictoryPoints: int
     | TaxIncrease of BonusCondition: BonusCondition
 
+/// Given a card, returns the amount of victory points given by the card.
 let victoryPoints (c: Card): int = 
     match c with 
     | Trader(VictoryPoints = vp) | Citizen(VictoryPoints = vp) | Sailor(VictoryPoints = vp) | Mademoiselle(VictoryPoints = vp)
     | Jester(VictoryPoints = vp) | Admiral(VictoryPoints = vp) | Governor(VictoryPoints = vp) -> vp
     | _ -> 0
 
+/// Given a card, returns the amount of fighting strength given by the card.
 let fightingStrength (c: Card): int =
     match c with
     | Sailor(Strength = s) -> s
     | _ -> 0
 
+/// Given a card, returns its base price, i.e. the one written on the card itself before 
+/// any other card effects take action.
 let basePrice (c: Card): int = 
     match c with
     | Trader(Price = p) | Citizen(Price = p) | Sailor(Price = p) | Mademoiselle(Price = p)
@@ -70,6 +73,7 @@ type GameState =
       DrawPile: Card list
       Discard: Card list }
 
+/// All moves a player can make (valid moves depending on current game state).
 type Action = 
     | DiscoverCard
     | RepelShip
@@ -83,7 +87,7 @@ let rec drawCard (state: GameState): Card * GameState =
     | [] -> drawCard { state with DrawPile = Utils.shuffleList state.RandomNumberGenerator state.Discard; Discard = [] }
     | (drawnCard :: tail) -> (drawnCard, { state with DrawPile = tail})
 
-let rec drawCards (state: GameState) (count: int): Card list * GameState =
+let rec drawCards (count: int) (state: GameState): Card list * GameState =
     let mutable drawnCards = []
     let mutable currentState = state
     for _ in [1..count] do
@@ -97,10 +101,12 @@ let totalVictoryPoints (ownedCards: Card list): int = List.sumBy victoryPoints o
 let totalFightingStrength (ownedCards: Card list): int = List.sumBy fightingStrength ownedCards
 let lastDrawnCard (state: GameState): Card = state.HarborDisplay.Head
 
+/// Given a list of cards, returns the amount of distinct ship colors among them.
 let differentColoredShipCount (cards: Card list): int = 
     (cards |> List.collect (fun card -> match card with Ship(Color = c) -> [c] | _ -> []) |> List.distinct).Length
 
-// Calculates amount of cards the current player can take from the harbor display. Special effects (governor) not taken into account.
+/// Calculates amount of cards the current player can take from the harbor display. Special 
+/// effects (governor or many ship colors) not taken into account.
 let baseHireCount (cards: Card list): int = 
     let colorCount = cards |> differentColoredShipCount
     match colorCount with 
@@ -108,7 +114,7 @@ let baseHireCount (cards: Card list): int =
     | 4 -> 2
     | 5 -> 3
     | _ -> failwith "Invalid color count."
-    
+
 let effectivePrice (cardToHire: Card) (player: Player): int = 
     let basePrice = basePrice cardToHire
     let reduction = player.PersonalDisplay 
@@ -132,7 +138,7 @@ let bonusHireCount (player: Player): int =
     |> List.filter (fun c -> match c with Governor(_) -> true | _ -> false) 
     |> List.length
 
-let coloredShipExists (cards: Card list) (color: Color): bool = 
+let containsShipWithColor (color: Color) (cards: Card list): bool = 
     cards 
     |> List.exists (fun c -> match c with Ship(color2, _, _) -> color2 = color | _ -> false)
 
@@ -162,7 +168,7 @@ let playerReceivesCoins (playerIdx: int) (coinCount: int) (state: GameState): Ga
     if coinCount <= 0 then 
         state
     else
-    let (newCoins, state) = drawCards state coinCount
+    let (newCoins, state) = drawCards coinCount state
     let updatedPlayer = { state.Players.[playerIdx] with OwnedCoins = newCoins @ state.Players.[playerIdx].OwnedCoins}
     let updatedPlayerList = state.Players |> Utils.replaceAt playerIdx updatedPlayer
     { state with Players = updatedPlayerList }
@@ -231,7 +237,7 @@ let playerCanAffordCard (playerIdx: int) (cardIdx: int) (state: GameState): bool
         let ownedCoinCount = player.OwnedCoins.Length
         ownedCoinCount >= effectiveTotalPrice
 
-// Check if a player has won. If yes returns the index of that player, otherwise returns None.
+/// Check if a player has won. If yes returns the index of that player, otherwise returns None.
 let winningPlayer (state: GameState): int option =
     match state.Phase with
     | GameEnded(winningPlayerIdx) -> Some(winningPlayerIdx)
@@ -271,20 +277,18 @@ let winningPlayer (state: GameState): int option =
     if playerIdxWithMaxCoinCount.Length = 1 then
         Some (fst playerIdxWithMaxCoinCount.Head)
     else
-        // Normally, all tied players share the win. To keep the model simple, 
+        // Normally, all tied players would share the win. To keep the model simple, 
         // we give the win to the first player in the list for now.
         Some (fst playerIdxWithMaxCoinCount.Head)
 
 // TODO I'm sure there is a nicer way to model these cards...
-let isACitizen card = match card with Citizen(_) -> true | _ -> false
 let isCitizenWithKind card kind = match card with Citizen(k, _, _) when k = kind -> true | _ -> false
-let citizenKind card = match card with Citizen(kind, _, _) -> kind | _ -> failwith "Not a citizen."
+let citizenKind card = match card with Citizen(kind, _, _) -> Some kind | _ -> None
 
 let playerCanCompleteExpedition (playerIdx: int) (expeditionIdx: int) (state: GameState): bool = 
     let citizenKinds = 
         state.Players.[playerIdx].PersonalDisplay
-        |> List.filter isACitizen
-        |> List.map citizenKind
+        |> List.choose citizenKind
     let jackOfAllTradesCount = citizenKinds |> List.filter (fun k -> k = JackOfAllTrades) |> List.length
     let expeditionCard = state.Expeditions.[expeditionIdx]
     match expeditionCard with 
@@ -295,7 +299,7 @@ let playerCanCompleteExpedition (playerIdx: int) (expeditionIdx: int) (state: Ga
         count <= jackOfAllTradesCount
     | _ -> 
         false
-    
+
 // TODO it works, but it is kind of a mess?
 let playerCompletesExpedition (playerIdx: int) (expeditionIdx: int) (state: GameState): GameState =
     // Citizen cards always give exactly one victory point in the standard deck. Because of that, it does
@@ -341,7 +345,6 @@ let playerCompletesExpedition (playerIdx: int) (expeditionIdx: int) (state: Game
 
 // Calculates the next game state given an action from the current player.
 let step (action: Action) (state: GameState): GameState = 
-    let todo () = raise (NotImplementedException())
     let invalidAction () = failwith "Invalid action"
     let invalidAction2 msg = failwith msg
 
@@ -398,7 +401,7 @@ let step (action: Action) (state: GameState): GameState =
                 { state with Expeditions = drawnCard :: state.Expeditions }
 
             | Ship(color, coins, strength) ->
-                if coloredShipExists state.HarborDisplay color then
+                if state.HarborDisplay |> containsShipWithColor color then
                     if not (canRepelShip state.Players.[currentPlayerIdx] drawnCard) then
                         let bonusCoins = jesterBonusCoins state.Players.[currentPlayerIdx].PersonalDisplay
                         let state = playerReceivesCoins currentPlayerIdx bonusCoins state
@@ -432,7 +435,7 @@ let step (action: Action) (state: GameState): GameState =
             let state = 
                 if state.HarborDisplay.Length >= 5 then
                     let bonusCoins = admiralBonusCoins state.Players.[currentPlayerIdx].PersonalDisplay
-                    let (drawnCards, state) = drawCards state bonusCoins
+                    let (drawnCards, state) = drawCards bonusCoins state
                     { state with 
                         Players = state.Players |> Utils.modifyAt currentPlayerIdx (fun p -> {p with OwnedCoins = drawnCards @ p.OwnedCoins})}
                 else
