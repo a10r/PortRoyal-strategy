@@ -18,6 +18,21 @@ let ``Seeded RNG is deterministic``() =
     generateRandomSequence rng |> should not' (equal (generateRandomSequence rng3))
 
 [<Fact>]
+let ``RNG implementation is not immutable``() = 
+    let generateRandomSequence rng = List.init 10 (fun _ -> 100) |> List.map rng
+    
+    let originalRng = Utils.seededRng 42
+
+    // copying the rng does NOT create a copy of the underlying randomizer
+    let rng1 = originalRng 
+    let rng2 = originalRng
+
+    let seq1 = generateRandomSequence rng1
+    let seq2 = generateRandomSequence rng2
+
+    seq1 |> should not' (equal (seq2))
+
+[<Fact>]
 let ``Shuffle list``() =
     let list = [1; 2; 3; 4; 5]
     let rng = Utils.seededRng 42

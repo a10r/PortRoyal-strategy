@@ -11,7 +11,7 @@ let main argv =
     let gameCount = 1000
     for i in [1 .. gameCount] do
         let game = PortRoyalModel.newDefaultGame 2
-        let bots = [ SimulationEngine.randomizedAgent; SimulationEngine.randomizedAgent ]
+        let bots = [ SimulationEngine.smartTestAgent; SimulationEngine.randomizedAgent ]
 
         let sw = System.Diagnostics.Stopwatch.StartNew()
         let (moveCount, endState) = SimulationEngine.simulateGame game bots
