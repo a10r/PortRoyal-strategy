@@ -1,6 +1,6 @@
 # Port Royal strategy
 
-Port Royal is a 2-5 player card game published by Pegasus Games. While playing, I noticed that some basic strategies seemed to be more successful than others.
+Port Royal is a 2-5 player card game published by Pegasus Spiele. While playing, I noticed that some basic strategies seemed to be more successful than others.
 
 This project contains a model of the game and a simulation engine that can be used for (statistically) evaluating the winning chances of different strategies.
 
@@ -18,5 +18,5 @@ A two player game with very fast but stupid agents (which just pick a random act
 - [ ] Refactor some of the ugly parts of the model
 - [x] Simple simulation engine
 - [ ] Implement more complex heuristics
-- [ ] Implement more complex move planning
+- [ ] Implement more complex move planning (Minimax?)
 - [ ] Implement some sort of genetic algorithm for finding promising strategies (e.g., card hiring preferences)

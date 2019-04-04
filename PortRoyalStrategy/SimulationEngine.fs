@@ -16,7 +16,7 @@ let smartTestAgent (state: GameState): Action =
     let bestAction =
         actions
         |> Utils.shuffleList state.RandomNumberGenerator
-        |> List.maxBy (fun action -> step state action |> currentVP)
+        |> List.maxBy (fun action -> state |> step action |> currentVP)
     bestAction
 
 let simulateGame (state: GameState) (agents: Agent list): int * GameState = 
@@ -25,7 +25,7 @@ let simulateGame (state: GameState) (agents: Agent list): int * GameState =
     let mutable moveCount = 0
     while activePlayer.IsSome do
         let nextAction = agents.[activePlayer.Value] state
-        state <- step state nextAction
+        state <- state |> step nextAction
         activePlayer <- activePlayerIdx state
         moveCount <- moveCount + 1
     moveCount, state

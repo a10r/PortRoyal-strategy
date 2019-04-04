@@ -64,7 +64,7 @@ let ``[drawCard] shuffle works correctly``() =
 [<Fact>]
 let ``[step] discover card (basic)``() = 
     let state = { simpleTwoPlayerGame with DrawPile = [ Ship(Blue, 1, Strength 1); Ship(Red, 1, Strength 1); ] }
-    let newState = step state DiscoverCard
+    let newState = state |> step DiscoverCard
 
     newState.HarborDisplay |> should equal [ Ship(Blue, 1, Strength 1) ]
     newState.Phase |> should equal (Discover(0))
@@ -76,7 +76,7 @@ let ``[step] discover card (same colored ship, cannot repel)``() =
                     HarborDisplay = [ Ship(Blue, 1, Strength 1) ]
                     DrawPile = [ Ship(Blue, 1, Strength 1); Ship(Red, 1, Strength 1); ]
                     Discard = [ Ship(Green, 1, Strength 1) ] }
-    let newState = step state DiscoverCard
+    let newState = state |> step DiscoverCard
 
     // all cards should be discarded; we automatically move to the TradeAndHire phase
     newState.Discard |> should matchList ([state.DrawPile.Head] @ state.HarborDisplay @ state.Discard)
@@ -92,7 +92,7 @@ let ``[step] discover card (same colored ship, can repel)``() =
                     DrawPile = [ Ship(Blue, 1, Strength 1); Ship(Red, 1, Strength 1); ]
                     Discard = [ Ship(Green, 1, Strength 1) ]
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer }
-    let newState = step state DiscoverCard
+    let newState = state |> step DiscoverCard
 
     // current player automatically repels the ship (since it's the only possible move)
     newState.Discard |> should matchList (state.DrawPile.Head :: state.Discard)
@@ -104,7 +104,7 @@ let ``[step] discover card (same colored ship, can repel)``() =
 let ``[step] discover card (expedition)``() = 
     let expedition = Expedition([Settler; Settler], 4, 4)
     let state = { simpleTwoPlayerGame with DrawPile = [expedition] }
-    let newState = step state DiscoverCard
+    let newState = state |> step DiscoverCard
 
     newState.HarborDisplay |> should equal List.empty<Card>
     newState.Phase |> should equal (Discover(0))
@@ -115,7 +115,7 @@ let ``[step] discover card (expedition)``() =
 [<Fact>]
 let ``[step] begin hiring (basic)``() =
     let state = { simpleTwoPlayerGame with HarborDisplay = [ Ship(Blue, 1, Strength 1) ]}
-    let newState = step state BeginHiring
+    let newState = state |> step BeginHiring
 
     newState.Phase |> should equal (TradeAndHire(0, 0, 1))
 
@@ -127,7 +127,7 @@ let ``[step] begin hiring, owns governor``() =
                     Phase = Discover(0)
                     HarborDisplay = [ Citizen(Settler, 2, 1) ]
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer}
-    let newState = step state BeginHiring
+    let newState = state |> step BeginHiring
 
     newState.Phase |> should equal (TradeAndHire(0, 0, 2))
 
@@ -139,7 +139,7 @@ let ``[step] pass to non-current player, owns governor``() =
                     Phase = TradeAndHire(0, 0, 1)
                     HarborDisplay = [ Citizen(Settler, 2, 1) ]
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 1 activePlayer}
-    let newState = step state Pass
+    let newState = state |> step Pass
 
     newState.Phase |> should equal (TradeAndHire(0, 1, 2))
 
@@ -151,7 +151,7 @@ let ``[step] begin hiring, owns admiral, 5+ cards``() =
                     DrawPile = List.replicate 10 anyCard
                     HarborDisplay = List.replicate 5 anyCard
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer}
-    let newState = step state BeginHiring
+    let newState = state |> step BeginHiring
 
     // current player gets two extra coins
     newState.Phase |> should equal (TradeAndHire(0, 0, 1))
@@ -167,7 +167,7 @@ let ``[step] begin hiring, owns 2 admirals, 5+ cards``() =
                     DrawPile = List.replicate 10 anyCard
                     HarborDisplay = List.replicate 5 anyCard
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer}
-    let newState = step state BeginHiring
+    let newState = state |> step BeginHiring
 
     // current player gets 4 extra coins
     newState.Phase |> should equal (TradeAndHire(0, 0, 1))
@@ -182,7 +182,7 @@ let ``[step] begin hiring, owns admiral, less than 5 cards``() =
                     DrawPile = List.replicate 10 anyCard
                     HarborDisplay = List.replicate 4 anyCard
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer}
-    let newState = step state BeginHiring
+    let newState = state |> step BeginHiring
 
     // current player does not get admiral bonus
     newState.Phase |> should equal (TradeAndHire(0, 0, 1))
@@ -198,7 +198,7 @@ let ``[step] begin hiring, owns admiral, less than 5 cards``() =
 let ``[step] begin hiring, X differently colored ships gives Y base hire count``(differentlyColoredShipCount: int, baseHireCount: int) =
     let shipList = [Red; Blue; Green; Yellow; Black] |> List.map (fun c -> Ship(c, 1, Strength 1))
     let state = { simpleTwoPlayerGame with HarborDisplay = shipList |> List.take differentlyColoredShipCount }
-    let newState = step state BeginHiring
+    let newState = state |> step BeginHiring
 
     newState.Phase |> should equal (TradeAndHire(0, 0, baseHireCount))
 
@@ -206,7 +206,7 @@ let ``[step] begin hiring, X differently colored ships gives Y base hire count``
 [<Fact>]
 let ``[step] cannot begin hiring when no card has been discovered``() = 
     let state = { simpleTwoPlayerGame with HarborDisplay = []}
-    (fun () -> step state BeginHiring |> ignore) 
+    (fun () -> state |> step BeginHiring |> ignore) 
     |> should throw typeof<System.Exception>
 
 [<Fact>]
@@ -215,7 +215,7 @@ let ``[step] take card (ship)``() =
                     Phase = TradeAndHire(0, 0, 1)
                     HarborDisplay = [ Ship(Blue, 2, Strength 1) ]
                     DrawPile = [ Ship(Red, 1, Strength 1); Ship(Green, 1, Strength 1) ]}
-    let newState = step state (TakeCard(0))
+    let newState = state |> step (TakeCard(0))
 
     // two cards are taken from the draw pile; the ship from the harbor display is discarded
     newState.Players.[0].OwnedCoins |> should matchList ([ Ship(Red, 1, Strength 1); Ship(Green, 1, Strength 1) ] @ state.Players.[0].OwnedCoins)
@@ -234,7 +234,7 @@ let ``[step] take card (ship), trader bonus``() =
                     HarborDisplay = [ Ship(Blue, 2, Strength 1) ]
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer
                     DrawPile = [ Ship(Red, 1, Strength 1); Ship(Green, 1, Strength 1); Ship(Yellow, 1, Strength 1) ] }
-    let newState = step state (TakeCard(0))
+    let newState = state |> step (TakeCard(0))
 
     // player gains all three cards in the draw pile as coins
     newState.Players.[0].OwnedCoins |> should matchList (state.DrawPile @ state.Players.[0].OwnedCoins)
@@ -249,7 +249,7 @@ let ``[step] take card (hirable card)``() =
     let state = { simpleTwoPlayerGame with 
                     Phase = TradeAndHire(0, 0, 1)
                     HarborDisplay = [ Citizen(Settler, 1, 1) ]}
-    let newState = step state (TakeCard(0))
+    let newState = state |> step (TakeCard(0))
 
     // need to pay one coin for this card
     newState.Players.[0].OwnedCoins.Length |> should equal 2
@@ -264,7 +264,7 @@ let ``[step] take card as inactive player (hirable card)``() =
     let state = { simpleTwoPlayerGame with 
                     Phase = TradeAndHire(0, 1, 1)
                     HarborDisplay = [ Citizen(Settler, 1, 1) ]}
-    let newState = step state (TakeCard(0))
+    let newState = state |> step (TakeCard(0))
 
     // need to pay one coin for this card and one coin to the active player
     newState.Players.[0].OwnedCoins.Length |> should equal 4
@@ -280,7 +280,7 @@ let ``[step] leftover cards are discarded``() =
     let state = { simpleTwoPlayerGame with 
                     Phase = TradeAndHire(0, 1, 1)
                     HarborDisplay = [ Citizen(Settler, 1, 1) ]}
-    let newState = step state Pass
+    let newState = state |> step Pass
 
     // need to pay one coin for this card and one coin to the active player
     newState.Players |> should equal state.Players
@@ -298,7 +298,7 @@ let ``[step] take card (hirable card), price reduction``() =
                     Phase = TradeAndHire(0, 0, 1)
                     HarborDisplay = [ Citizen(Settler, 2, 1) ]
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer}
-    let newState = step state (TakeCard(0))
+    let newState = state |> step (TakeCard(0))
 
     // need to pay one coin for this card (normal price: 2)
     newState.Players.[0].OwnedCoins.Length |> should equal 2
@@ -316,7 +316,7 @@ let ``[step] take card (hirable card), double price reduction``() =
                     Phase = TradeAndHire(0, 0, 1)
                     HarborDisplay = [ Citizen(Settler, 2, 1) ]
                     Players = simpleTwoPlayerGame.Players |> Utils.replaceAt 0 currentPlayer}
-    let newState = step state (TakeCard(0))
+    let newState = state |> step (TakeCard(0))
 
     // need to pay nothing for this card (normal price: 2)
     newState.Players.[0].OwnedCoins |> should equal state.Players.[0].OwnedCoins
@@ -335,7 +335,7 @@ let ``[step] tax reduction, max strength``(coinCount: int, lostCoinCount: int) =
                     Phase = Discover(0)
                     DrawPile = [ TaxIncrease(MaxStrength); anyCard; anyCard ]
                     Players = [ currentPlayer; otherPlayer; currentPlayer ]}
-    let newState = step state DiscoverCard
+    let newState = state |> step DiscoverCard
 
     newState.Players.[0].OwnedCoins |> should matchList [ anyCard ]
     newState.Players.[1].OwnedCoins |> should matchList (List.replicate (coinCount - lostCoinCount) anyCard)
@@ -351,7 +351,7 @@ let ``[step] tax reduction, min victory points``(coinCount: int, lostCoinCount: 
                     Phase = Discover(0)
                     DrawPile = [ TaxIncrease(MinVictoryPoints); anyCard; anyCard ]
                     Players = [ currentPlayer; otherPlayer; currentPlayer ]}
-    let newState = step state DiscoverCard
+    let newState = state |> step DiscoverCard
 
     newState.Players.[0].OwnedCoins |> should matchList [ anyCard ]
     newState.Players.[1].OwnedCoins |> should matchList (List.replicate (coinCount - lostCoinCount) anyCard)
@@ -366,7 +366,7 @@ let ``[step] discover card (same colored ship, cannot repel), owns jester``() =
                     DrawPile = [ Ship(Blue, 1, Strength 1); anyCard ]
                     Discard = [ anyCard ]
                     Players = [ currentPlayer; defaultPlayer ] }
-    let newState = step state DiscoverCard
+    let newState = state |> step DiscoverCard
 
     // all cards should be discarded; we automatically move to the TradeAndHire phase
     newState.Discard |> should matchList ([ state.DrawPile.Head ] @ state.HarborDisplay @ state.Discard)
@@ -384,7 +384,7 @@ let ``[step] jester bonus for non-current players``() =
                     HarborDisplay = [ ] // empty!
                     DrawPile = [ anyCard ]
                     Players = [ defaultPlayer; activePlayer ] }
-    let newState = step state Pass
+    let newState = state |> step Pass
 
     newState.HarborDisplay |> should equal List.empty<Card>
     newState.Phase |> should equal (TradeAndHire(0, 1, 1))
@@ -401,7 +401,7 @@ let ``[step] complete expedition, 1 settler``() =
                     DrawPile = [ anyCard; anyCard ]
                     Expeditions = [ expedition ]
                     Players = [ currentPlayer; defaultPlayer ] }
-    let newState = step state (CompleteExpedition(0))
+    let newState = state |> step (CompleteExpedition(0))
 
     newState.Players.[0].PersonalDisplay |> should matchList [ expedition ]
     newState.Players.[0].OwnedCoins |> should matchList [ anyCard; anyCard ] // player gets 2 bonus coins
@@ -417,7 +417,7 @@ let ``[step] complete expedition, 1 settler, dummy cards``() =
                     DrawPile = [ anyCard; anyCard ]
                     Expeditions = [ expedition; expedition ]
                     Players = [ currentPlayer; defaultPlayer ] }
-    let newState = step state (CompleteExpedition(1))
+    let newState = state |> step (CompleteExpedition(1))
 
     newState.Players.[0].PersonalDisplay |> should matchList [ expedition; Citizen(Priest, 1, 1); Citizen(Settler, 1, 1) ]
     newState.Players.[0].OwnedCoins |> should matchList [ anyCard; anyCard ] // player gets 2 bonus coins
@@ -433,7 +433,7 @@ let ``[step] complete expedition, does not unnecessarily use JackOfAllTrades``()
                     DrawPile = [ anyCard; anyCard ]
                     Expeditions = [ expedition ]
                     Players = [ currentPlayer; defaultPlayer ] }
-    let newState = step state (CompleteExpedition(0))
+    let newState = state |> step (CompleteExpedition(0))
 
     newState.Players.[0].PersonalDisplay |> should matchList [ expedition; Citizen(JackOfAllTrades, 1, 1) ]
     newState.Players.[0].OwnedCoins |> should matchList [ anyCard; anyCard ] // player gets 2 bonus coins
@@ -449,7 +449,7 @@ let ``[step] complete expedition, multiple requirements``() =
                     DrawPile = [ anyCard; anyCard ]
                     Expeditions = [ expedition ]
                     Players = [ currentPlayer; defaultPlayer ] }
-    let newState = step state (CompleteExpedition(0))
+    let newState = state |> step (CompleteExpedition(0))
 
     newState.Players.[0].PersonalDisplay |> should matchList [ expedition; Citizen(Priest, 1, 1);  ]
     newState.Players.[0].OwnedCoins |> should matchList [ anyCard; anyCard ] // player gets 2 bonus coins
@@ -463,7 +463,7 @@ let ``[step] game ends once a player has at least 12 victory points``() =
     let state = { simpleTwoPlayerGame with 
                     Phase = TradeAndHire(0, 1, 0)
                     Players = [winningPlayer; defaultPlayer] }
-    let newState = step state Pass
+    let newState = state |> step Pass
 
     newState.Phase |> should equal (GameEnded(0))
 
@@ -475,7 +475,7 @@ let ``[step] game end, tiebreaker``() =
     let state = { simpleTwoPlayerGame with 
                     Phase = TradeAndHire(0, 1, 0)
                     Players = [otherPlayer; winningPlayer] }
-    let newState = step state Pass
+    let newState = state |> step Pass
 
     newState.Phase |> should equal (GameEnded(1))
 

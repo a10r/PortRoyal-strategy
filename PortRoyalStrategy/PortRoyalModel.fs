@@ -78,14 +78,14 @@ type Action =
     | CompleteExpedition of ExpeditionIdx: int
     | Pass
 
-let rec drawCard (gameState: GameState): Card * GameState = 
-    match gameState.DrawPile with
-    | [] -> drawCard { gameState with DrawPile = Utils.shuffleList gameState.RandomNumberGenerator gameState.Discard; Discard = [] }
-    | (drawnCard :: tail) -> (drawnCard, { gameState with DrawPile = tail})
+let rec drawCard (state: GameState): Card * GameState = 
+    match state.DrawPile with
+    | [] -> drawCard { state with DrawPile = Utils.shuffleList state.RandomNumberGenerator state.Discard; Discard = [] }
+    | (drawnCard :: tail) -> (drawnCard, { state with DrawPile = tail})
 
-let rec drawCards (gameState: GameState) (count: int): Card list * GameState =
+let rec drawCards (state: GameState) (count: int): Card list * GameState =
     let mutable drawnCards = []
-    let mutable currentState = gameState
+    let mutable currentState = state
     for _ in [1..count] do
         let (c, newState) = drawCard currentState
         drawnCards <- c :: drawnCards
@@ -340,7 +340,7 @@ let playerCompletesExpedition (playerIdx: int) (expeditionIdx: int) (state: Game
         failwith "Cannot complete this expedition."
 
 // Calculates the next game state given an action from the current player.
-let step (state: GameState) (action: Action): GameState = 
+let step (action: Action) (state: GameState): GameState = 
     let todo () = raise (NotImplementedException())
     let invalidAction () = failwith "Invalid action"
     let invalidAction2 msg = failwith msg
